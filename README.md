@@ -1,0 +1,1 @@
+adminscripts & configs, based on lpirl's repository: https://github.com/lpirl/admintools

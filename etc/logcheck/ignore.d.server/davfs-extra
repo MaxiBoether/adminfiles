@@ -1,0 +1,1 @@
+^\w{3} [ :[:digit:]]{11} [-._[:alnum:]]+ mount.davfs: open files exceed max cache size by [[:digit:]]+ MiBytes

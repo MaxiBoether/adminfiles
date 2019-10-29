@@ -1,0 +1,164 @@
+# An array to note missing features to ease diagnosis
+typeset -ga debian_missing_features
+
+#
+# history
+#
+HISTFILE=~/.histfile
+HISTSIZE=10000
+SAVEHIST=10000
+setopt APPEND_HISTORY
+setopt HIST_IGNORE_SPACE
+
+setopt extendedglob notify
+bindkey -e
+
+#
+# auto completion
+#
+autoload -Uz compinit
+compinit
+setopt autocd
+# correct mistakes:
+setopt CORRECT
+setopt AUTO_LIST
+# allow tab completion in the middle of a word
+setopt COMPLETE_IN_WORD
+# tab completion moves to end of word
+setopt ALWAYS_TO_END
+setopt listtypes
+
+unalias run-help
+autoload run-help
+
+# allow approximate completion
+zstyle ':completion:*' completer _complete _match _approximate
+zstyle ':completion:*:match:*' original only
+zstyle ':completion:*:approximate:*' max-errors 1 numeric
+zstyle ':completion:*:sudo:*' command-path /usr/local/sbin \
+                                           /usr/local/bin  \
+                                           /usr/sbin       \
+                                           /usr/bin        \
+                                           /sbin           \
+                                           /bin
+
+# history search
+bindkey "^[[A" history-search-backward
+bindkey "^[[B" history-search-forward
+
+# ctrl-left/right
+bindkey "\e[1;5C" forward-word
+bindkey "\e[1;5D" backward-word
+
+# ctrl-backspace/delete
+bindkey "\C-_" backward-kill-word
+bindkey "\e[3;5~" kill-word
+
+# alt-backspace
+bindkey "\e\d" undo
+
+bindkey "\e[3~" delete-char
+bindkey '\e[H' beginning-of-line
+bindkey '\e[F' end-of-line
+
+#
+# direcotry history
+#
+
+DIRSTACKFILE="$HOME/.zsh_dirstack"
+if [[ -f $DIRSTACKFILE ]] && [[ $#dirstack -eq 0 ]]; then
+  dirstack=( ${(f)"$(< $DIRSTACKFILE)"} )
+  [[ -d $dirstack[1] ]] && cd $dirstack[1]
+fi
+chpwd() {
+  print -l $PWD ${(u)dirstack} >$DIRSTACKFILE
+}
+
+DIRSTACKSIZE=11
+
+setopt autopushd pushdsilent pushdtohome
+
+# Remove duplicate entries
+setopt pushdignoredups
+
+# This reverts the +/- operators.
+setopt pushdminus
+
+#
+# Alt-Up, Alt-Left directory navigation
+#
+
+cdUndoKey() {
+  popd      > /dev/null
+  zle       reset-prompt
+  echo
+  ls
+  echo
+}
+
+cdParentKey() {
+  pushd .. > /dev/null
+  zle      reset-prompt
+  echo
+  ls
+  echo
+}
+
+zle -N                 cdParentKey
+zle -N                 cdUndoKey
+bindkey '^[[1;3A'      cdParentKey
+bindkey '^[[1;3D'      cdUndoKey
+
+#
+# prompt
+#
+autoload colors; colors
+PS1=""
+PS1+="%B%F{red}%(?..%? )%f%b%{$reset_color%}"
+PS1+="%B["
+PS1+="%{$fg[green]%}%n%{$reset_color%}%b"
+PS1+="@"
+PS1+="%B%{$fg[red]%}%M%b%{$reset_color%}"
+PS1+=":"
+PS1+="%{$fg[yellow]%}%~%{$reset_color%}%B"
+PS1+="]%b "
+export PS1=$PS1
+
+#
+# Window title
+#
+case $TERM in
+  termite|*xterm*|rxvt|rxvt-unicode|rxvt-256color|rxvt-unicode-256color|(dt|k|E)term)
+    precmd () {
+      print -Pn "\e]0;[%n@%M:%~]% \a"
+    }
+    preexec () { print -Pn "\e]0;[%n@%M:%~] $1\a" }
+    ;;
+  screen|screen-256color)
+    precmd () {
+      print -Pn "\e]83;title \"$1\"\a"
+      print -Pn "\e]0;$TERM - (%L) [%n@%M:%~]\a"
+    }
+    preexec () {
+      print -Pn "\e]83;title \"$1\"\a"
+      print -Pn "\e]0;$TERM - (%L) [%n@%M:%~] $1\a"
+    }
+    ;;
+esac
+
+#
+# aliases
+#
+
+alias cp='cp --reflink=auto --sparse=always'
+alias ls='ls --color=auto -F --time-style=+"%Y-%m-%d %H:%M:%S"'
+alias l="ls -hl"
+alias ll="l -a"
+alias grep="grep --color=auto"
+alias egrep="egrep --color=auto"
+alias today="date +%y%m%d"
+alias today2="date +%Y%m%d"
+alias now="date +%y%m%d%H%M%S"
+alias now2="date +%Y%m%d%H%M%S"
+alias nprocplus1="echo $(($(nproc)+1))"
+alias nano="nano -cAiw"

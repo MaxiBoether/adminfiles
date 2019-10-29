@@ -1,0 +1,11 @@
+[Unit]
+Description=enable real-time settings for audio applications
+
+[Service]
+Type=oneshot
+ExecStart=/opt/admintools/scripts/real-time-settings on
+ExecStop=/opt/admintools/scripts/real-time-settings off
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
